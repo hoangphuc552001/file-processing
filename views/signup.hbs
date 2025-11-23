@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Course Feedback Portal</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="icon" type="image/x-icon" href="https://www.setu.ie/favicon.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="Create your account for Course Feedback Portal">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Create Account</h1>
+                <p>Join us to explore course feedback and insights</p>
+            </div>
+
+            <form id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        required 
+                        autocomplete="username"
+                        placeholder="Choose a username"
+                    >
+                    <span class="error-message" id="usernameError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        required 
+                        autocomplete="email"
+                        placeholder="Enter your email"
+                    >
+                    <span class="error-message" id="emailError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-input">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            required 
+                            autocomplete="new-password"
+                            placeholder="Create a strong password"
+                        >
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <span class="strength-text" id="strengthText">Password strength</span>
+                    </div>
+                    <span class="error-message" id="passwordError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <div class="password-input">
+                        <input 
+                            type="password" 
+                            id="confirmPassword" 
+                            name="confirmPassword" 
+                            required 
+                            autocomplete="new-password"
+                            placeholder="Confirm your password"
+                        >
+                        <button type="button" class="password-toggle" id="confirmPasswordToggle">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <span class="error-message" id="confirmPasswordError"></span>
+                </div>
+
+                <button type="submit" class="auth-button" id="signupButton">
+                    <span class="button-text">Create Account</span>
+                    <span class="button-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        Creating account...
+                    </span>
+                </button>
+
+                <div class="auth-message" id="authMessage"></div>
+            </form>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a href="/login">Sign in here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is already logged in
+        function checkExistingAuth() {
+            const accessToken = localStorage.getItem('accessToken');
+            const idToken = localStorage.getItem('idToken');
+            
+            // If tokens exist, redirect to main page
+            if (accessToken && idToken) {
+                console.log('User already logged in, redirecting to main page...');
+                window.location.href = '/';
+                return true;
+            }
+            return false;
+        }
+
+        class SignupManager {
+            constructor() {
+                // Check if already logged in before initializing
+                if (checkExistingAuth()) {
+                    return;
+                }
+                
+                this.form = document.getElementById('signupForm');
+                this.usernameInput = document.getElementById('username');
+                this.emailInput = document.getElementById('email');
+                this.passwordInput = document.getElementById('password');
+                this.confirmPasswordInput = document.getElementById('confirmPassword');
+                this.passwordToggle = document.getElementById('passwordToggle');
+                this.confirmPasswordToggle = document.getElementById('confirmPasswordToggle');
+                this.signupButton = document.getElementById('signupButton');
+                this.authMessage = document.getElementById('authMessage');
+                this.strengthFill = document.getElementById('strengthFill');
+                this.strengthText = document.getElementById('strengthText');
+                
+                this.init();
+            }
+
+            init() {
+                this.form.addEventListener('submit', this.handleSignup.bind(this));
+                this.passwordToggle.addEventListener('click', () => this.togglePassword(this.passwordInput, this.passwordToggle));
+                this.confirmPasswordToggle.addEventListener('click', () => this.togglePassword(this.confirmPasswordInput, this.confirmPasswordToggle));
+                
+                // Password strength checker
+                this.passwordInput.addEventListener('input', this.checkPasswordStrength.bind(this));
+                
+                // Auto-focus username input
+                this.usernameInput.focus();
+            }
+
+            async handleSignup(e) {
+                e.preventDefault();
+                
+                const username = this.usernameInput.value.trim();
+                const email = this.emailInput.value.trim();
+                const password = this.passwordInput.value;
+                const confirmPassword = this.confirmPasswordInput.value;
+
+                // Clear previous errors
+                this.clearErrors();
+                this.clearMessage();
+
+                // Validate inputs
+                if (!this.validateInputs(username, email, password, confirmPassword)) {
+                    return;
+                }
+
+                this.setLoading(true);
+
+                try {
+                    const response = await fetch('/auth/signup', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, email, password })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showMessage('Account created successfully! Please check your email for verification code.', 'success');
+                        
+                        // Redirect to verification page after a delay
+                        setTimeout(() => {
+                            window.location.href = `/verify?username=${encodeURIComponent(username)}`;
+                        }, 2000);
+                    } else {
+                        this.showMessage(result.error || 'Signup failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Signup error:', error);
+                    this.showMessage('Network error. Please try again.', 'error');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            validateInputs(username, email, password, confirmPassword) {
+                let isValid = true;
+
+                if (!username) {
+                    this.showFieldError('usernameError', 'Username is required');
+                    isValid = false;
+                } else if (username.length < 3) {
+                    this.showFieldError('usernameError', 'Username must be at least 3 characters');
+                    isValid = false;
+                } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                    this.showFieldError('usernameError', 'Username can only contain letters, numbers, and underscores');
+                    isValid = false;
+                }
+
+                if (!email) {
+                    this.showFieldError('emailError', 'Email is required');
+                    isValid = false;
+                } else if (!this.isValidEmail(email)) {
+                    this.showFieldError('emailError', 'Please enter a valid email');
+                    isValid = false;
+                }
+
+                if (!password) {
+                    this.showFieldError('passwordError', 'Password is required');
+                    isValid = false;
+                } else if (password.length < 6) {
+                    this.showFieldError('passwordError', 'Password must be at least 6 characters');
+                    isValid = false;
+                }
+
+                if (!confirmPassword) {
+                    this.showFieldError('confirmPasswordError', 'Please confirm your password');
+                    isValid = false;
+                } else if (password !== confirmPassword) {
+                    this.showFieldError('confirmPasswordError', 'Passwords do not match');
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            checkPasswordStrength() {
+                const password = this.passwordInput.value;
+                let strength = 0;
+                let strengthText = '';
+
+                if (password.length >= 6) strength += 1;
+                if (password.length >= 8) strength += 1;
+                if (/[A-Z]/.test(password)) strength += 1;
+                if (/[a-z]/.test(password)) strength += 1;
+                if (/\d/.test(password)) strength += 1;
+
+                const percentage = (strength / 5) * 100;
+                this.strengthFill.style.width = `${percentage}%`;
+
+                if (strength <= 2) {
+                    this.strengthFill.style.backgroundColor = '#ef4444';
+                    strengthText = 'Weak';
+                } else if (strength <= 3) {
+                    this.strengthFill.style.backgroundColor = '#f59e0b';
+                    strengthText = 'Fair';
+                } else if (strength <= 4) {
+                    this.strengthFill.style.backgroundColor = '#3b82f6';
+                    strengthText = 'Good';
+                } else {
+                    this.strengthFill.style.backgroundColor = '#10b981';
+                    strengthText = 'Strong';
+                }
+
+                this.strengthText.textContent = strengthText;
+            }
+
+            togglePassword(input, toggle) {
+                const type = input.type === 'password' ? 'text' : 'password';
+                input.type = type;
+                
+                const eyeIcon = toggle.querySelector('.eye-icon');
+                eyeIcon.textContent = type === 'password' ? '👁️' : '🙈';
+            }
+
+            setLoading(loading) {
+                const buttonText = this.signupButton.querySelector('.button-text');
+                const buttonLoading = this.signupButton.querySelector('.button-loading');
+                
+                if (loading) {
+                    buttonText.style.display = 'none';
+                    buttonLoading.style.display = 'flex';
+                    this.signupButton.disabled = true;
+                } else {
+                    buttonText.style.display = 'block';
+                    buttonLoading.style.display = 'none';
+                    this.signupButton.disabled = false;
+                }
+            }
+
+            showMessage(message, type) {
+                this.authMessage.textContent = message;
+                this.authMessage.className = `auth-message ${type}`;
+                this.authMessage.style.display = 'block';
+            }
+
+            clearMessage() {
+                this.authMessage.style.display = 'none';
+                this.authMessage.textContent = '';
+            }
+
+            showFieldError(fieldId, message) {
+                const errorElement = document.getElementById(fieldId);
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+
+            clearErrors() {
+                const errorElements = document.querySelectorAll('.error-message');
+                errorElements.forEach(el => {
+                    el.textContent = '';
+                    el.style.display = 'none';
+                });
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new SignupManager();
+        });
+    </script>
+</body>
+</html>

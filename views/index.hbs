@@ -1,2 +1,1356 @@
-<h1>{{title}}</h1>
-<p>Welcome to {{title}}</p>
+<div class="hero-section">
+  <div class="hero-content">
+    <h1 class="hero-title">Moodle</h1>
+    <p class="hero-subtitle">Learning platform for SETU students</p>
+  </div>
+</div>
+
+{{#if dbError}}
+  <div class="alert alert-error">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-content">
+      <strong>Database Error:</strong> {{dbError}}
+    </div>
+  </div>
+{{/if}}
+
+{{#if courses}}
+  {{#if courses.length}}
+    <div class="controls-section">
+      <div class="controls-container">
+        <div class="search-container">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input id="search" type="search" placeholder="Search courses, departments, or codes..." aria-label="Search courses" />
+          </div>
+      </div>
+        
+        <div class="controls-group">
+          <button id="add-course-btn" class="add-course-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Course
+          </button>
+          
+          <div class="select-wrapper">
+            <select id="sort" class="select-input">
+              <option value="name-asc">Sort Name (A-Z)</option>
+              <option value="name-desc">Sort Name (Z-A)</option>
+              <option value="dept-asc">Department (A-Z)</option>
+              <option value="dept-desc">Department (Z-A)</option>
+        </select>
+      </div>
+          
+          <div class="view-toggle">
+            <button id="view-card" class="view-btn active" aria-label="Card view">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </button>
+            <button id="view-list" class="view-btn" aria-label="List view">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="courses-section">
+      <div id="courseGrid" class="courses-grid">
+      {{#each courses}}
+          <article class="course-card"
+                 data-name="{{this.name}}"
+                 data-code="{{this.code}}"
+                 data-dept="{{this.department}}">
+            <div class="card-image">
+            <img src="{{this.image}}"
+                   alt="{{this.name}} course banner"
+                 onerror="this.onerror=null;this.src='/images/course-placeholder.png';" />
+              <div class="card-overlay">
+                <div class="progress-ring">
+                  <svg class="progress-ring-svg" width="60" height="60">
+                    <circle class="progress-ring-circle" cx="30" cy="30" r="25" fill="transparent" stroke="rgba(255,255,255,0.3)" stroke-width="4"/>
+                    <circle class="progress-ring-circle progress-ring-fill" cx="30" cy="30" r="25" fill="transparent" stroke="white" stroke-width="4" stroke-dasharray="157" stroke-dashoffset="47"/>
+                  </svg>
+                  <span class="progress-text">87%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-content">
+              <div class="card-header">
+                <h3 class="course-title">
+                  <a href="/courses/{{this.id}}">{{this.name}}</a>
+                </h3>
+                <div class="course-code">{{this.code}}</div>
+          </div>
+
+              <div class="card-meta">
+                <div class="department">
+                  <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27,6.96 12,12.01 20.73,6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
+                  {{this.department}}
+                </div>
+              </div>
+          </div>
+
+            <div class="card-footer">
+              <div class="course-stats">
+                <div class="stat">
+                  <span class="stat-label">Progress</span>
+                  <span class="stat-value">87%</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Status</span>
+                  <span class="stat-value status-active">Active</span>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="card-action danger delete-course-btn" data-course-id="{{this.id}}" data-course-name="{{this.name}}" aria-label="Delete course">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/>
+                    <path d="M14 11v6"/>
+                    <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+        </article>
+      {{/each}}
+      </div>
+    </div>
+  {{else}}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14,2 14,8 20,8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10,9 9,9 8,9"></polyline>
+        </svg>
+      </div>
+      <h3 class="empty-title">No courses found</h3>
+      <p class="empty-description">There are currently no courses available. Please check back later.</p>
+    </div>
+  {{/if}}
+{{/if}}
+
+<!-- Add Course Modal -->
+<div id="add-course-modal" class="modal">
+  <div class="modal-overlay" id="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">Add New Course</h2>
+      <button class="modal-close" id="modal-close" aria-label="Close modal">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <form id="add-course-form" class="modal-form">
+      <div class="form-group">
+        <label for="course-name" class="form-label">Course Name *</label>
+        <input 
+          type="text" 
+          id="course-name" 
+          name="name" 
+          class="form-input" 
+          placeholder="e.g., Cloud Architecture" 
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="course-code" class="form-label">Course Code *</label>
+        <input 
+          type="text" 
+          id="course-code" 
+          name="code" 
+          class="form-input" 
+          placeholder="e.g., CS301" 
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="course-department" class="form-label">Department *</label>
+        <input 
+          type="text" 
+          id="course-department" 
+          name="department" 
+          class="form-input" 
+          placeholder="e.g., Computer Science" 
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="course-image" class="form-label">Image URL</label>
+        <input 
+          type="url" 
+          id="course-image" 
+          name="image" 
+          class="form-input" 
+          placeholder="https://example.com/image.jpg"
+        />
+      </div>
+
+      <div id="form-message" class="form-message"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <span class="btn-text">Create Course</span>
+          <span class="btn-loader" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* Modern Design System */
+  :root {
+    /* Colors */
+    --primary-50: #eff6ff;
+    --primary-100: #dbeafe;
+    --primary-500: #3b82f6;
+    --primary-600: #2563eb;
+    --primary-700: #1d4ed8;
+    --primary-900: #1e3a8a;
+    
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    
+    --success-50: #f0fdf4;
+    --success-500: #22c55e;
+    --success-600: #16a34a;
+    
+    --error-50: #fef2f2;
+    --error-500: #ef4444;
+    --error-600: #dc2626;
+    
+    /* Spacing */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+    --space-20: 5rem;
+    
+    /* Typography */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    /* Border radius */
+    --radius-sm: 0.375rem;
+    --radius: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 2rem;
+    
+    /* Transitions */
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Base styles */
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    color: var(--gray-800);
+    background: linear-gradient(135deg, var(--gray-50) 0%, var(--primary-50) 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Hero Section */
+  .hero-section {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    color: white;
+    padding: var(--space-16) 0;
+    margin-bottom: var(--space-8);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+  }
+
+  .hero-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin: 0 0 var(--space-4);
+    background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  .hero-subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin: 0;
+    opacity: 0.9;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Alert */
+  .alert {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    margin: var(--space-6) auto;
+    max-width: 1200px;
+    font-weight: 500;
+  }
+
+  .alert-error {
+    background: var(--error-50);
+    border: 1px solid var(--error-500);
+    color: var(--error-600);
+  }
+
+  .alert-icon {
+    font-size: 1.25rem;
+  }
+
+  /* Controls Section */
+  .controls-section {
+    max-width: 1200px;
+    margin: 0 auto var(--space-8);
+    padding: 0 var(--space-6);
+  }
+
+  .controls-container {
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    display: flex;
+    gap: var(--space-6);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .search-container {
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .search-input-wrapper {
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: var(--space-4);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    pointer-events: none;
+  }
+
+  #search {
+    width: 100%;
+    padding: var(--space-4) var(--space-4) var(--space-4) 3rem;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-family: var(--font-sans);
+    transition: var(--transition);
+    background: var(--gray-50);
+  }
+
+  #search:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    background: white;
+    box-shadow: 0 0 0 3px var(--primary-100);
+  }
+
+  .controls-group {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+  }
+
+  .select-wrapper {
+    position: relative;
+  }
+
+  .select-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: var(--space-2);
+  }
+
+  .select-input {
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    background: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 180px;
+  }
+
+  .select-input:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--primary-100);
+  }
+
+  .view-toggle {
+    display: flex;
+    background: var(--gray-100);
+    border-radius: var(--radius-lg);
+    padding: var(--space-1);
+    gap: var(--space-1);
+  }
+
+  .view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--gray-500);
+  }
+
+  .view-btn:hover {
+    background: var(--gray-200);
+    color: var(--gray-700);
+  }
+
+  .view-btn.active {
+    background: white;
+    color: var(--primary-600);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Add Course Button */
+  .add-course-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-md);
+  }
+
+  .add-course-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .add-course-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Courses Section */
+  .courses-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+  }
+
+  .courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-6);
+  }
+
+  /* Course Cards */
+  .course-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    transition: var(--transition-slow);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .course-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-200);
+  }
+
+  .card-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+  }
+
+  .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition-slow);
+  }
+
+  .course-card:hover .card-image img {
+    transform: scale(1.05);
+  }
+
+  .card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: var(--transition);
+  }
+
+  .course-card:hover .card-overlay {
+    opacity: 1;
+  }
+
+  .progress-ring {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .progress-ring-svg {
+    transform: rotate(-90deg);
+  }
+
+  .progress-ring-circle {
+    transition: stroke-dashoffset 0.5s ease;
+  }
+
+  .progress-text {
+    position: absolute;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: white;
+  }
+
+  .card-content {
+    padding: var(--space-6);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .course-title {
+    margin: 0 0 var(--space-2);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .course-title a {
+    color: var(--gray-800);
+    text-decoration: none;
+    transition: var(--transition);
+  }
+
+  .course-title a:hover {
+    color: var(--primary-600);
+  }
+
+  .course-code {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary-600);
+    background: var(--primary-50);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius);
+    display: inline-block;
+  }
+
+  .card-meta {
+    margin-top: auto;
+  }
+
+  .department {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--gray-600);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .meta-icon {
+    color: var(--gray-400);
+  }
+
+  .card-footer {
+    padding: var(--space-4) var(--space-6) var(--space-6);
+    border-top: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .course-stats {
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .stat-value {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--gray-800);
+  }
+
+  .status-active {
+    color: var(--success-600);
+  }
+
+  .card-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--primary-50);
+    color: var(--primary-600);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .card-action:hover {
+    background: var(--primary-100);
+    transform: translateX(2px);
+  }
+
+  .card-actions {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .card-action.danger {
+    background: var(--error-50);
+    color: var(--error-600);
+  }
+
+  .card-action.danger:hover {
+    background: #fde2e2;
+  }
+
+  /* List View */
+  .list .courses-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .list .course-card {
+    flex-direction: row;
+    height: 120px;
+  }
+
+  .list .card-image {
+    width: 200px;
+    height: 100%;
+    flex-shrink: 0;
+  }
+
+  .list .card-content {
+    flex: 1;
+    padding: var(--space-4);
+  }
+
+  .list .card-footer {
+    padding: var(--space-4);
+    border-top: none;
+    border-left: 1px solid var(--gray-100);
+    flex-direction: column;
+    justify-content: center;
+    min-width: 120px;
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: var(--space-20) var(--space-6);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .empty-icon {
+    color: var(--gray-300);
+    margin-bottom: var(--space-6);
+  }
+
+  .empty-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin: 0 0 var(--space-3);
+  }
+
+  .empty-description {
+    font-size: 1rem;
+    color: var(--gray-600);
+    margin: 0;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-content {
+    position: relative;
+    background: white;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 1001;
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+  }
+
+  .modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: var(--gray-100);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--gray-600);
+  }
+
+  .modal-close:hover {
+    background: var(--gray-200);
+    color: var(--gray-900);
+  }
+
+  .modal-form {
+    padding: var(--space-6);
+  }
+
+  .form-group {
+    margin-bottom: var(--space-5);
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: var(--space-2);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-family: var(--font-sans);
+    transition: var(--transition);
+    background: var(--gray-50);
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    background: white;
+    box-shadow: 0 0 0 3px var(--primary-100);
+  }
+
+  .form-message {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: var(--space-4);
+    display: none;
+  }
+
+  .form-message.success {
+    display: block;
+    background: var(--success-50);
+    color: var(--success-600);
+    border: 1px solid var(--success-500);
+  }
+
+  .form-message.error {
+    display: block;
+    background: var(--error-50);
+    color: var(--error-600);
+    border: 1px solid var(--error-500);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    margin-top: var(--space-6);
+  }
+
+  .btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    color: white;
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+  }
+
+  .btn-secondary:hover {
+    background: var(--gray-200);
+  }
+
+  .btn-loader {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.125rem;
+    }
+    
+    .controls-container {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .search-container {
+      min-width: auto;
+    }
+    
+    .controls-group {
+      justify-content: space-between;
+    }
+    
+    .courses-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+    
+    .list .course-card {
+      height: auto;
+      flex-direction: column;
+    }
+    
+    .list .card-image {
+      width: 100%;
+      height: 200px;
+    }
+    
+    .list .card-footer {
+      border-left: none;
+      border-top: 1px solid var(--gray-100);
+      flex-direction: row;
+      min-width: auto;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .hero-section {
+      padding: var(--space-12) 0;
+    }
+    
+    .hero-title {
+      font-size: 2rem;
+    }
+    
+    .controls-container {
+      padding: var(--space-4);
+    }
+    
+    .courses-section {
+      padding: 0 var(--space-4);
+    }
+  }
+</style>
+
+<script>
+  // Check if user is logged in, redirect to login if not
+  (function checkAuth() {
+    const accessToken = localStorage.getItem('accessToken');
+    const idToken = localStorage.getItem('idToken');
+    
+    // If no tokens, redirect to login page
+    if (!accessToken || !idToken) {
+      console.log('User not authenticated, redirecting to login...');
+      window.location.href = '/login';
+      return;
+    }
+  })();
+
+  (function () {
+    const grid = document.getElementById('courseGrid');
+    const search = document.getElementById('search');
+    const sort = document.getElementById('sort');
+    const btnCard = document.getElementById('view-card');
+    const btnList = document.getElementById('view-list');
+    const CONFIRM_DELETE_MESSAGE = 'Are you sure you want to delete this course? This action cannot be undone.';
+
+    if (!grid || !search || !sort || !btnCard || !btnList) {
+      console.warn('Required elements not found');
+      return;
+    }
+
+    function applySearch() {
+      const query = (search.value || '').toLowerCase().trim();
+      const cards = grid.querySelectorAll('.course-card');
+      
+      cards.forEach(card => {
+        const name = (card.dataset.name || '').toLowerCase();
+        const code = (card.dataset.code || '').toLowerCase();
+        const dept = (card.dataset.dept || '').toLowerCase();
+        
+        const matches = name.includes(query) || 
+                       code.includes(query) || 
+                       dept.includes(query);
+        
+        card.style.display = matches ? '' : 'none';
+      });
+    }
+
+    function applySort() {
+      const cards = Array.from(grid.querySelectorAll('.course-card'));
+      const [key, direction] = (sort.value || 'name-asc').split('-');
+      
+      const getValue = (card) => {
+        if (key === 'dept') {
+          return (card.dataset.dept || '').toLowerCase();
+        }
+        return (card.dataset.name || '').toLowerCase();
+      };
+      
+      cards.sort((a, b) => {
+        const aVal = getValue(a);
+        const bVal = getValue(b);
+        
+        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+      
+      // Re-append sorted cards
+      cards.forEach(card => grid.appendChild(card));
+    }
+
+    function setView(mode) {
+      const isList = mode === 'list';
+      document.body.classList.toggle('list', isList);
+      btnCard.classList.toggle('active', !isList);
+      btnList.classList.toggle('active', isList);
+      
+      // Update grid class for better styling
+      grid.className = isList ? 'courses-grid list-view' : 'courses-grid';
+    }
+
+    // Event listeners
+    search.addEventListener('input', applySearch);
+    sort.addEventListener('change', applySort);
+    btnCard.addEventListener('click', () => setView('card'));
+    btnList.addEventListener('click', () => setView('list'));
+
+    // Initialize
+    applySort();
+    
+    // Add smooth animations
+    const style = document.createElement('style');
+    style.textContent = `
+      .course-card {
+        animation: fadeInUp 0.6s ease-out;
+      }
+      
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .course-card:nth-child(1) { animation-delay: 0.1s; }
+      .course-card:nth-child(2) { animation-delay: 0.2s; }
+      .course-card:nth-child(3) { animation-delay: 0.3s; }
+      .course-card:nth-child(4) { animation-delay: 0.4s; }
+      .course-card:nth-child(5) { animation-delay: 0.5s; }
+      .course-card:nth-child(6) { animation-delay: 0.6s; }
+    `;
+    document.head.appendChild(style);
+
+    // Delete course handler (event delegation)
+    grid.addEventListener('click', async (e) => {
+      const deleteBtn = e.target.closest('.delete-course-btn');
+      if (!deleteBtn) return;
+
+      const courseId = deleteBtn.getAttribute('data-course-id');
+      const courseName = deleteBtn.getAttribute('data-course-name');
+      if (!courseId) return;
+
+      const confirmMsg = `${CONFIRM_DELETE_MESSAGE}\n\nCourse: ${courseName || ''}`.trim();
+      const ok = window.confirm(confirmMsg);
+      if (!ok) return;
+
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          alert('You must be logged in to delete a course.');
+          return;
+        }
+
+        // Optimistic UI: fade out card
+        const card = deleteBtn.closest('.course-card');
+        if (card) {
+          card.style.opacity = '0.5';
+        }
+
+        const resp = await fetch(`/api/courses/${courseId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+
+        if (resp.ok) {
+          // Remove card from DOM
+          if (card) card.remove();
+        } else {
+          // Revert fade if failed
+          if (card) card.style.opacity = '';
+          const data = await resp.json().catch(() => ({}));
+          alert(data.error || 'Failed to delete course');
+        }
+      } catch (err) {
+        alert('An error occurred while deleting the course.');
+      }
+    });
+  })();
+
+  // Modal functionality
+  (function() {
+    const modal = document.getElementById('add-course-modal');
+    const addBtn = document.getElementById('add-course-btn');
+    const closeBtn = document.getElementById('modal-close');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const overlay = document.getElementById('modal-overlay');
+    const form = document.getElementById('add-course-form');
+    const formMessage = document.getElementById('form-message');
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const btnLoader = submitBtn.querySelector('.btn-loader');
+
+    // Open modal
+    function openModal() {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // Close modal
+    function closeModal() {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      form.reset();
+      formMessage.className = 'form-message';
+      formMessage.textContent = '';
+    }
+
+    // Show message
+    function showMessage(message, type) {
+      formMessage.textContent = message;
+      formMessage.className = `form-message ${type}`;
+    }
+
+    // Set loading state
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      btnText.style.display = loading ? 'none' : 'inline';
+      btnLoader.style.display = loading ? 'inline' : 'none';
+    }
+
+    // Event listeners
+    if (addBtn) {
+      addBtn.addEventListener('click', openModal);
+    }
+    
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeModal);
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', closeModal);
+    }
+    
+    if (overlay) {
+      overlay.addEventListener('click', closeModal);
+    }
+
+    // Handle form submission
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+          name: document.getElementById('course-name').value,
+          code: document.getElementById('course-code').value,
+          department: document.getElementById('course-department').value,
+          image: document.getElementById('course-image').value || '/images/course-placeholder.png'
+        };
+
+        setLoading(true);
+        showMessage('', '');
+
+        try {
+          const accessToken = localStorage.getItem('accessToken');
+          
+          const response = await fetch('/api/courses', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify(formData)
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            showMessage('Course created successfully! Refreshing page...', 'success');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          } else {
+            showMessage(data.error || 'Failed to create course', 'error');
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error('Error creating course:', error);
+          showMessage('An error occurred. Please try again.', 'error');
+          setLoading(false);
+        }
+      });
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) {
+        closeModal();
+      }
+    });
+  })();
+</script>

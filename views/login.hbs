@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Course Feedback Portal</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="icon" type="image/x-icon" href="https://www.setu.ie/favicon.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="Login to Course Feedback Portal">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Welcome Back</h1>
+                <p>Sign in to your account to continue</p>
+            </div>
+
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        required 
+                        autocomplete="username"
+                        placeholder="Enter your username"
+                    >
+                    <span class="error-message" id="usernameError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-input">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            required 
+                            autocomplete="current-password"
+                            placeholder="Enter your password"
+                        >
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <span class="error-message" id="passwordError"></span>
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe">
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                </div>
+
+                <button type="submit" class="auth-button" id="loginButton">
+                    <span class="button-text">Sign In</span>
+                    <span class="button-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        Signing in...
+                    </span>
+                </button>
+
+                <div class="auth-message" id="authMessage"></div>
+            </form>
+
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="/signup">Sign up here</a></p>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is already logged in
+        function checkExistingAuth() {
+            const accessToken = localStorage.getItem('accessToken');
+            const idToken = localStorage.getItem('idToken');
+            
+            // If tokens exist, redirect to main page
+            if (accessToken && idToken) {
+                console.log('User already logged in, redirecting to main page...');
+                window.location.href = '/';
+                return true;
+            }
+            return false;
+        }
+
+        class AuthManager {
+            constructor() {
+                // Check if already logged in before initializing
+                if (checkExistingAuth()) {
+                    return;
+                }
+                
+                this.form = document.getElementById('loginForm');
+                this.usernameInput = document.getElementById('username');
+                this.passwordInput = document.getElementById('password');
+                this.passwordToggle = document.getElementById('passwordToggle');
+                this.loginButton = document.getElementById('loginButton');
+                this.authMessage = document.getElementById('authMessage');
+                
+                this.init();
+            }
+
+            init() {
+                this.form.addEventListener('submit', this.handleLogin.bind(this));
+                this.passwordToggle.addEventListener('click', this.togglePassword.bind(this));
+                
+                // Auto-focus username input
+                this.usernameInput.focus();
+            }
+
+            async handleLogin(e) {
+                e.preventDefault();
+                
+                const username = this.usernameInput.value.trim();
+                const password = this.passwordInput.value;
+
+                // Clear previous errors
+                this.clearErrors();
+                this.clearMessage();
+
+                // Validate inputs
+                if (!this.validateInputs(username, password)) {
+                    return;
+                }
+
+                this.setLoading(true);
+
+                try {
+                    const response = await fetch('/auth/signin', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Store tokens
+                        localStorage.setItem('accessToken', result.accessToken);
+                        localStorage.setItem('refreshToken', result.refreshToken);
+                        localStorage.setItem('idToken', result.idToken);
+                        localStorage.setItem('username', username);
+                        
+                        this.showMessage('Login successful! Redirecting...', 'success');
+                        
+                        // Redirect to dashboard or home
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1500);
+                    } else {
+                        this.showMessage('Login failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    this.showMessage('Network error. Please try again.', 'error');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            validateInputs(username, password) {
+                let isValid = true;
+
+                if (!username) {
+                    this.showFieldError('usernameError', 'Username is required');
+                    isValid = false;
+                } else if (username.length < 3) {
+                    this.showFieldError('usernameError', 'Username must be at least 3 characters');
+                    isValid = false;
+                }
+
+                if (!password) {
+                    this.showFieldError('passwordError', 'Password is required');
+                    isValid = false;
+                } else if (password.length < 6) {
+                    this.showFieldError('passwordError', 'Password must be at least 6 characters');
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            togglePassword() {
+                const type = this.passwordInput.type === 'password' ? 'text' : 'password';
+                this.passwordInput.type = type;
+                
+                const eyeIcon = this.passwordToggle.querySelector('.eye-icon');
+                eyeIcon.textContent = type === 'password' ? '👁️' : '🙈';
+            }
+
+            setLoading(loading) {
+                const buttonText = this.loginButton.querySelector('.button-text');
+                const buttonLoading = this.loginButton.querySelector('.button-loading');
+                
+                if (loading) {
+                    buttonText.style.display = 'none';
+                    buttonLoading.style.display = 'flex';
+                    this.loginButton.disabled = true;
+                } else {
+                    buttonText.style.display = 'block';
+                    buttonLoading.style.display = 'none';
+                    this.loginButton.disabled = false;
+                }
+            }
+
+            showMessage(message, type) {
+                this.authMessage.textContent = message;
+                this.authMessage.className = `auth-message ${type}`;
+                this.authMessage.style.display = 'block';
+            }
+
+            clearMessage() {
+                this.authMessage.style.display = 'none';
+                this.authMessage.textContent = '';
+            }
+
+            showFieldError(fieldId, message) {
+                const errorElement = document.getElementById(fieldId);
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+
+            clearErrors() {
+                const errorElements = document.querySelectorAll('.error-message');
+                errorElements.forEach(el => {
+                    el.textContent = '';
+                    el.style.display = 'none';
+                });
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new AuthManager();
+        });
+    </script>
+</body>
+</html>

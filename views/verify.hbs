@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Course Feedback Portal</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="icon" type="image/x-icon" href="https://www.setu.ie/favicon.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="Verify your email address">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="verification-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h1>Verify Your Email</h1>
+                <p>We've sent a verification code to your email address</p>
+            </div>
+
+            <form id="verifyForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        required 
+                        autocomplete="username"
+                        placeholder="Enter your username"
+                        readonly
+                    >
+                    <span class="error-message" id="usernameError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="code">Verification Code</label>
+                    <input 
+                        type="text" 
+                        id="code" 
+                        name="code" 
+                        required 
+                        autocomplete="one-time-code"
+                        placeholder="Enter code"
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                    >
+                    <span class="error-message" id="codeError"></span>
+                </div>
+
+                <button type="submit" class="auth-button" id="verifyButton">
+                    <span class="button-text">Verify Email</span>
+                    <span class="button-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        Verifying...
+                    </span>
+                </button>
+
+                <div class="auth-message" id="authMessage"></div>
+            </form>
+
+            <div class="verification-actions">
+                <button type="button" class="resend-button" id="resendButton">
+                    <span class="button-text">Resend Code</span>
+                    <span class="button-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        Sending...
+                    </span>
+                </button>
+                
+                <div class="resend-timer" id="resendTimer" style="display: none;">
+                    <span>Resend available in <span id="countdown">60</span> seconds</span>
+                </div>
+            </div>
+
+            <div class="auth-footer">
+                <p>Didn't receive the email? Check your spam folder</p>
+                <p><a href="/login">← Back to Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .verification-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .verification-icon svg {
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 15px rgba(37, 99, 235, 0);
+            }
+        }
+
+        .verification-actions {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .resend-button {
+            background: transparent;
+            color: #2563eb;
+            border: 2px solid #2563eb;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .resend-button:hover:not(:disabled) {
+            background: #2563eb;
+            color: white;
+        }
+
+        .resend-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .resend-button .button-loading {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .resend-timer {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 0.5rem;
+            color: #92400e;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .resend-timer span {
+            font-weight: 600;
+        }
+
+        #code {
+            font-size: 1.5rem;
+            letter-spacing: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+        }
+    </style>
+
+    <script>
+        class VerificationManager {
+            constructor() {
+                this.form = document.getElementById('verifyForm');
+                this.usernameInput = document.getElementById('username');
+                this.codeInput = document.getElementById('code');
+                this.verifyButton = document.getElementById('verifyButton');
+                this.resendButton = document.getElementById('resendButton');
+                this.authMessage = document.getElementById('authMessage');
+                this.resendTimer = document.getElementById('resendTimer');
+                this.countdown = document.getElementById('countdown');
+                
+                this.init();
+            }
+
+            init() {
+                // Get username from URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const username = urlParams.get('username');
+                if (username) {
+                    this.usernameInput.value = username;
+                } else {
+                    // Redirect to signup if no username provided
+                    window.location.href = '/signup';
+                    return;
+                }
+
+                this.form.addEventListener('submit', this.handleVerification.bind(this));
+                this.resendButton.addEventListener('click', this.handleResend.bind(this));
+                
+                // Auto-focus code input
+                this.codeInput.focus();
+                
+                // Format code input (6 digits)
+                this.codeInput.addEventListener('input', this.formatCodeInput.bind(this));
+            }
+
+            async handleVerification(e) {
+                e.preventDefault();
+                
+                const username = this.usernameInput.value.trim();
+                const code = this.codeInput.value.trim();
+
+                // Clear previous errors
+                this.clearErrors();
+                this.clearMessage();
+
+                // Validate inputs
+                if (!this.validateInputs(username, code)) {
+                    return;
+                }
+
+                this.setLoading(true);
+
+                try {
+                    const response = await fetch('/auth/verify-email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, code })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showMessage('Email verified successfully! Redirecting to login...', 'success');
+                        
+                        // Redirect to login page after a delay
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    } else {
+                        this.showMessage(result.error || 'Verification failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    this.showMessage('Network error. Please try again.', 'error');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            async handleResend() {
+                const username = this.usernameInput.value.trim();
+
+                if (!username) {
+                    this.showMessage('Please enter your username first', 'error');
+                    return;
+                }
+
+                this.setResendLoading(true);
+                this.clearMessage();
+
+                try {
+                    const response = await fetch('/auth/resend-verification', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showMessage('Verification code resent successfully! Check your email.', 'success');
+                        this.startResendTimer();
+                    } else {
+                        this.showMessage(result.error || 'Failed to resend code', 'error');
+                    }
+                } catch (error) {
+                    console.error('Resend error:', error);
+                    this.showMessage('Network error. Please try again.', 'error');
+                } finally {
+                    this.setResendLoading(false);
+                }
+            }
+
+            validateInputs(username, code) {
+                let isValid = true;
+
+                if (!username) {
+                    this.showFieldError('usernameError', 'Username is required');
+                    isValid = false;
+                }
+
+                if (!code) {
+                    this.showFieldError('codeError', 'Verification code is required');
+                    isValid = false;
+                } else if (!/^\d{6}$/.test(code)) {
+                    this.showFieldError('codeError', 'Please enter a valid 6-digit code');
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            formatCodeInput() {
+                // Remove non-numeric characters
+                this.codeInput.value = this.codeInput.value.replace(/\D/g, '');
+                
+                // Limit to 6 digits
+                if (this.codeInput.value.length > 6) {
+                    this.codeInput.value = this.codeInput.value.slice(0, 6);
+                }
+            }
+
+            setLoading(loading) {
+                const buttonText = this.verifyButton.querySelector('.button-text');
+                const buttonLoading = this.verifyButton.querySelector('.button-loading');
+                
+                if (loading) {
+                    buttonText.style.display = 'none';
+                    buttonLoading.style.display = 'flex';
+                    this.verifyButton.disabled = true;
+                } else {
+                    buttonText.style.display = 'block';
+                    buttonLoading.style.display = 'none';
+                    this.verifyButton.disabled = false;
+                }
+            }
+
+            setResendLoading(loading) {
+                const buttonText = this.resendButton.querySelector('.button-text');
+                const buttonLoading = this.resendButton.querySelector('.button-loading');
+                
+                if (loading) {
+                    buttonText.style.display = 'none';
+                    buttonLoading.style.display = 'flex';
+                    this.resendButton.disabled = true;
+                } else {
+                    buttonText.style.display = 'block';
+                    buttonLoading.style.display = 'none';
+                    this.resendButton.disabled = false;
+                }
+            }
+
+            startResendTimer() {
+                let timeLeft = 60;
+                this.resendTimer.style.display = 'block';
+                this.resendButton.disabled = true;
+                
+                const timer = setInterval(() => {
+                    timeLeft--;
+                    this.countdown.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        this.resendTimer.style.display = 'none';
+                        this.resendButton.disabled = false;
+                    }
+                }, 1000);
+            }
+
+            showMessage(message, type) {
+                this.authMessage.textContent = message;
+                this.authMessage.className = `auth-message ${type}`;
+                this.authMessage.style.display = 'block';
+            }
+
+            clearMessage() {
+                this.authMessage.style.display = 'none';
+                this.authMessage.textContent = '';
+            }
+
+            showFieldError(fieldId, message) {
+                const errorElement = document.getElementById(fieldId);
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+
+            clearErrors() {
+                const errorElements = document.querySelectorAll('.error-message');
+                errorElements.forEach(el => {
+                    el.textContent = '';
+                    el.style.display = 'none';
+                });
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new VerificationManager();
+        });
+    </script>
+</body>
+</html>
+

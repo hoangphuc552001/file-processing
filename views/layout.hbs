@@ -1,10 +1,214 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="icon" type="image/x-icon" href="https://www.setu.ie/favicon.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="Course Feedback Portal - Discover and explore comprehensive course offerings">
+    <meta name="theme-color" content="#2563eb">
+    <style>
+      .navbar {
+        background: white;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+      
+      .navbar-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .navbar-brand {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #2563eb;
+        text-decoration: none;
+      }
+      
+      .navbar-menu {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      }
+      
+      .navbar-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+      }
+      
+      .navbar-btn-primary {
+        background: #2563eb;
+        color: white;
+      }
+      
+      .navbar-btn-primary:hover {
+        background: #1d4ed8;
+      }
+      
+      .navbar-btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+      }
+      
+      .navbar-btn-secondary:hover {
+        background: #e5e7eb;
+      }
+      
+      .navbar-btn-logout {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      
+      .navbar-btn-logout:hover {
+        background: #fecaca;
+      }
+      
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 1rem;
+        background: #f0f9ff;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #1e40af;
+      }
+      
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+      }
+    </style>
   </head>
   <body>
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="/" class="navbar-brand">Media Processing</a>
+        <div class="navbar-menu">
+          <div id="auth-buttons-logged-out" style="display: none;">
+            <a href="/login" class="navbar-btn navbar-btn-secondary">Login</a>
+            <a href="/signup" class="navbar-btn navbar-btn-primary">Sign Up</a>
+          </div>
+          <div id="auth-buttons-logged-in" style="display: none;">
+            <div class="user-info">
+              <div class="user-avatar" id="user-avatar"></div>
+              <span id="user-email"></span>
+            </div>
+            <button id="logout-btn" class="navbar-btn navbar-btn-logout">Logout</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+    
     {{{body}}}
+    
+    <script>
+      // Check authentication state and update navbar
+      function updateNavbar() {
+        const accessToken = localStorage.getItem('accessToken');
+        const idToken = localStorage.getItem('idToken');
+        const loggedOutButtons = document.getElementById('auth-buttons-logged-out');
+        const loggedInButtons = document.getElementById('auth-buttons-logged-in');
+        
+        if (accessToken && idToken) {
+          // User is logged in
+          loggedOutButtons.style.display = 'none';
+          loggedInButtons.style.display = 'flex';
+          loggedInButtons.style.gap = '1rem';
+          loggedInButtons.style.alignItems = 'center';
+          
+          // Get username from localStorage
+          const username = localStorage.getItem('username') || 'User';
+          const userEmailEl = document.getElementById('user-email');
+          const userAvatarEl = document.getElementById('user-avatar');
+          
+          if (userEmailEl) {
+            userEmailEl.textContent = username;
+          }
+          
+          if (userAvatarEl) {
+            userAvatarEl.textContent = username.charAt(0).toUpperCase();
+          }
+        } else {
+          // User is not logged in
+          loggedOutButtons.style.display = 'flex';
+          loggedOutButtons.style.gap = '1rem';
+          loggedInButtons.style.display = 'none';
+        }
+      }
+      
+      // Handle logout
+      function handleLogout() {
+        const accessToken = localStorage.getItem('accessToken');
+        
+        if (accessToken) {
+          // Call logout endpoint
+          fetch('/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + accessToken
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Logout response:', data);
+          })
+          .catch(error => {
+            console.error('Logout error:', error);
+          })
+          .finally(() => {
+            // Clear localStorage regardless of server response
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('idToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('username');
+            
+            // Redirect to home page
+            window.location.href = '/';
+          });
+        } else {
+          // No token, just clear everything and redirect
+          localStorage.clear();
+          window.location.href = '/';
+        }
+      }
+      
+      // Initialize navbar when DOM loads
+      document.addEventListener('DOMContentLoaded', () => {
+        updateNavbar();
+        
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', handleLogout);
+        }
+      });
+    </script>
   </body>
 </html>

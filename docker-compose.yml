@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: course-feedback-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-course_feedback}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: course-feedback-app
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      # Server Configuration
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-3000}
+      SESSION_SECRET: ${SESSION_SECRET:-your-secret-key-change-in-production}
+      
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-course_feedback}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      
+      # AWS Configuration (use IAM roles in production)
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      
+      # Cognito Configuration
+      COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID}
+      COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID}
+      COGNITO_CLIENT_SECRET: ${COGNITO_CLIENT_SECRET}
+      COGNITO_ISSUER_URL: ${COGNITO_ISSUER_URL}
+      COGNITO_REDIRECT_URI: ${COGNITO_REDIRECT_URI:-http://localhost:3000/callback}
+      
+      # SQS Configuration (if applicable)
+      SQS_QUEUE_URL: ${SQS_QUEUE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # For development - mount source code (comment out in production)
+      # - ./:/app
+      # - /app/node_modules
+      - app_logs:/app/logs
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  app_logs:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+
