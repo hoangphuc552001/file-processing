@@ -11,15 +11,14 @@
     <p class="file-upload-subtitle">Upload your files directly here</p>
     
     <div class="upload-area" id="upload-area">
-      <input type="file" id="file-input" multiple style="display: none;" />
+      <input type="file" id="file-input" multiple accept="image/jpeg,image/jpg,.jpg,.jpeg" style="display: none;" />
       <div class="upload-content">
         <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="17 8 12 3 7 8"></polyline>
           <line x1="12" y1="3" x2="12" y2="15"></line>
         </svg>
-        <p class="upload-text">Drag and drop files here</p>
-        <p class="upload-hint">Maximum file size: 10MB per file</p>
+        <p class="upload-text">Drag and drop JPEG/JPG images here</p>
       </div>
     </div>
 
@@ -1693,12 +1692,13 @@
     }
     
     // Fetch metadata for a file
-    async function fetchFileMetadata(key) {
+    async function fetchFileMetadata(key, waitForUpdate = false) {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) return null;
 
       try {
-        const response = await fetch(`/api/files/${encodeURIComponent(key)}/metadata?wait=true&maxWaitTime=10000`, {
+        const url = `/api/files/${encodeURIComponent(key)}/metadata${waitForUpdate ? '?wait=true&maxWaitTime=30000' : ''}`;
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${accessToken}`
           }
@@ -1715,12 +1715,115 @@
       }
       return null;
     }
+    
+    // Poll for metadata updates (refresh with waiting)
+    async function refreshMetadataWithPolling(key, itemElement, maxAttempts = 30, intervalMs = 2000) {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        showMessage('You must be logged in to refresh metadata', 'error');
+        return;
+      }
+
+      // Store reference to update button state
+      let currentItem = itemElement;
+      const updateButtonState = (text, disabled) => {
+        const btn = currentItem.querySelector('.metadata-btn');
+        if (btn) {
+          btn.disabled = disabled;
+          btn.textContent = text;
+        }
+      };
+
+      updateButtonState('Refreshing...', true);
+
+      let attempts = 0;
+      let lastMetadata = null;
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        
+        try {
+          const metadata = await fetchFileMetadata(key, false);
+          
+          if (metadata) {
+            // Check if metadata has changed (status updated, etc.)
+            const hasChanged = !lastMetadata || 
+              lastMetadata.status !== metadata.status ||
+              lastMetadata.metadataStatus !== metadata.metadataStatus ||
+              lastMetadata.moderationStatus !== metadata.moderationStatus;
+            
+            lastMetadata = metadata;
+            
+            // Update the file in uploadedFiles array
+            const fileIndex = uploadedFiles.findIndex(f => f.key === key);
+            if (fileIndex !== -1) {
+              uploadedFiles[fileIndex].metadata = metadata;
+              
+              // Re-render the item
+              const file = uploadedFiles[fileIndex];
+              const newItem = createResultItem(file);
+              
+              // Update button state before replacing
+              const newBtn = newItem.querySelector('.metadata-btn');
+              if (newBtn) {
+                newBtn.disabled = true;
+                newBtn.textContent = 'Refreshing...';
+              }
+              
+              currentItem.replaceWith(newItem);
+              currentItem = newItem;
+              
+              if (hasChanged) {
+                showMessage('Metadata updated!', 'success');
+              }
+            }
+            
+            // Stop polling if status is complete/approved (no more updates expected)
+            if (metadata.status === 'COMPLETE' || 
+                (metadata.metadataStatus === 'COMPLETE' && metadata.moderationStatus === 'APPROVED')) {
+              clearInterval(pollInterval);
+              updateButtonState('Refresh Metadata', false);
+              showMessage('Metadata refresh complete', 'success');
+              return;
+            }
+          }
+          
+          // Stop after max attempts
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            updateButtonState('Refresh Metadata', false);
+            if (lastMetadata) {
+              showMessage('Metadata refresh stopped. Some updates may still be pending.', 'error');
+            } else {
+              showMessage('Could not fetch metadata. The file may still be processing.', 'error');
+            }
+          }
+        } catch (error) {
+          console.error('Error polling metadata:', error);
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            updateButtonState('Refresh Metadata', false);
+          }
+        }
+      }, intervalMs);
+    }
 
     // Upload file using pre-signed URL
     async function uploadFile(file) {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
         showMessage('You must be logged in to upload files', 'error');
+        return null;
+      }
+
+      // Validate file type - only JPEG/JPG allowed
+      const allowedTypes = ['image/jpeg', 'image/jpg'];
+      const allowedExtensions = ['.jpg', '.jpeg'];
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      
+      if (!allowedTypes.includes(file.type.toLowerCase()) && !allowedExtensions.includes(fileExtension)) {
+        markProgressComplete(file.name, false, 'Only JPEG/JPG images are allowed');
+        showMessage(`File "${file.name}" is not a JPEG/JPG image. Only JPEG/JPG images are allowed.`, 'error');
         return null;
       }
 
@@ -1819,10 +1922,10 @@
 
         markProgressComplete(file.name, true);
 
-        // Step 4: Fetch metadata from DynamoDB MediaJobs table
+        // Step 4: Fetch metadata from DynamoDB MediaJobs table (with waiting)
         let metadata = null;
         try {
-          const metadataResponse = await fetch(`/api/files/${encodeURIComponent(key)}/metadata?wait=true&maxWaitTime=10000`, {
+          const metadataResponse = await fetch(`/api/files/${encodeURIComponent(key)}/metadata?wait=true&maxWaitTime=15000`, {
             headers: {
               'Authorization': `Bearer ${accessToken}`
             }
@@ -1891,10 +1994,10 @@
         displayResults();
         showMessage(`Successfully uploaded ${results.length} file(s)`, 'success');
         
-        // Try to fetch metadata for files that don't have it yet
+        // Try to fetch metadata for files that don't have it yet (with waiting)
         results.forEach(async (file) => {
           if (!file.metadata) {
-            const metadata = await fetchFileMetadata(file.key);
+            const metadata = await fetchFileMetadata(file.key, true);
             if (metadata) {
               file.metadata = metadata;
               displayResults(); // Re-render to show metadata
@@ -1985,7 +2088,7 @@
       }
     });
 
-    // Refresh metadata handler
+    // Refresh metadata handler with polling
     uploadResultsList.addEventListener('click', async (e) => {
       if (e.target.classList.contains('metadata-btn')) {
         const key = e.target.dataset.key;
@@ -1993,31 +2096,8 @@
         
         if (!item) return;
 
-        e.target.disabled = true;
-        e.target.textContent = 'Loading...';
-
-        const metadata = await fetchFileMetadata(key);
-
-        if (metadata) {
-          // Update the file in uploadedFiles array
-          const fileIndex = uploadedFiles.findIndex(f => f.key === key);
-          if (fileIndex !== -1) {
-            uploadedFiles[fileIndex].metadata = metadata;
-          }
-          
-          // Re-render the item
-          const file = uploadedFiles.find(f => f.key === key);
-          if (file) {
-            const newItem = createResultItem(file);
-            item.replaceWith(newItem);
-          }
-          
-          showMessage('Metadata refreshed successfully', 'success');
-        } else {
-          showMessage('Could not fetch metadata. The file may still be processing.', 'error');
-          e.target.disabled = false;
-          e.target.textContent = 'Refresh Metadata';
-        }
+        // Start polling for metadata updates
+        await refreshMetadataWithPolling(key, item);
       }
     });
 
