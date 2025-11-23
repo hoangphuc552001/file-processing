@@ -1122,7 +1122,9 @@
   }
 
   .metadata-badge.status-completed,
-  .metadata-badge.status-success {
+  .metadata-badge.status-success,
+  .metadata-badge.status-complete,
+  .metadata-badge.status-approved {
     background: var(--success-50);
     color: var(--success-600);
   }
@@ -1134,7 +1136,8 @@
   }
 
   .metadata-badge.status-failed,
-  .metadata-badge.status-error {
+  .metadata-badge.status-error,
+  .metadata-badge.status-rejected {
     background: var(--error-50);
     color: var(--error-600);
   }
@@ -1610,20 +1613,68 @@
       item.className = 'upload-result-item';
       item.dataset.key = file.key;
       
-      // Build metadata display
+      // Build metadata display from DynamoDB
       let metadataHtml = '';
       if (file.metadata) {
         const metadataItems = [];
-        if (file.metadata.status) metadataItems.push(`<span class="metadata-badge status-${file.metadata.status.toLowerCase()}">${file.metadata.status}</span>`);
-        if (file.metadata.jobId) metadataItems.push(`<span class="metadata-text">Job ID: ${file.metadata.jobId}</span>`);
-        if (file.metadata.processedAt) metadataItems.push(`<span class="metadata-text">Processed: ${new Date(file.metadata.processedAt).toLocaleString()}</span>`);
-        if (file.metadata.duration) metadataItems.push(`<span class="metadata-text">Duration: ${file.metadata.duration}s</span>`);
+        
+        // Status badges
+        if (file.metadata.status) {
+          metadataItems.push(`<span class="metadata-badge status-${file.metadata.status.toLowerCase()}">${file.metadata.status}</span>`);
+        }
+        if (file.metadata.metadataStatus) {
+          metadataItems.push(`<span class="metadata-badge status-${file.metadata.metadataStatus.toLowerCase()}">Metadata: ${file.metadata.metadataStatus}</span>`);
+        }
+        if (file.metadata.moderationStatus) {
+          metadataItems.push(`<span class="metadata-badge status-${file.metadata.moderationStatus.toLowerCase()}">Moderation: ${file.metadata.moderationStatus}</span>`);
+        }
+        if (file.metadata.thumbStatus) {
+          metadataItems.push(`<span class="metadata-badge status-${file.metadata.thumbStatus.toLowerCase()}">Thumbnail: ${file.metadata.thumbStatus}</span>`);
+        }
+        
+        // File information
+        if (file.metadata.resolution) {
+          metadataItems.push(`<span class="metadata-text">Resolution: ${file.metadata.resolution}</span>`);
+        } else if (file.metadata.width && file.metadata.height) {
+          metadataItems.push(`<span class="metadata-text">Size: ${file.metadata.width}×${file.metadata.height}</span>`);
+        }
+        
+        if (file.metadata.format) {
+          metadataItems.push(`<span class="metadata-text">Format: ${file.metadata.format}</span>`);
+        }
+        
+        if (file.metadata.sizeBytes) {
+          const sizeMB = (file.metadata.sizeBytes / (1024 * 1024)).toFixed(2);
+          metadataItems.push(`<span class="metadata-text">Size: ${sizeMB} MB</span>`);
+        }
+        
+        if (file.metadata.contentType) {
+          metadataItems.push(`<span class="metadata-text">Type: ${file.metadata.contentType}</span>`);
+        }
+        
+        if (file.metadata.colorMode) {
+          metadataItems.push(`<span class="metadata-text">Color: ${file.metadata.colorMode}</span>`);
+        }
+        
+        if (file.metadata.createdAt) {
+          const createdDate = new Date(file.metadata.createdAt);
+          metadataItems.push(`<span class="metadata-text">Created: ${createdDate.toLocaleString()}</span>`);
+        }
+        
+        if (file.metadata.lastUpdate) {
+          const updatedDate = new Date(file.metadata.lastUpdate);
+          metadataItems.push(`<span class="metadata-text">Updated: ${updatedDate.toLocaleString()}</span>`);
+        }
+        
+        if (file.metadata.mediaId) {
+          metadataItems.push(`<span class="metadata-text">Media ID: ${file.metadata.mediaId}</span>`);
+        }
         
         if (metadataItems.length > 0) {
           metadataHtml = `<div class="upload-result-metadata">${metadataItems.join('')}</div>`;
         }
       } else {
-        metadataHtml = '<div class="upload-result-metadata"><span class="metadata-text metadata-loading">Fetching metadata...</span></div>';
+        metadataHtml = '<div class="upload-result-metadata"><span class="metadata-text metadata-loading">Fetching metadata from DynamoDB...</span></div>';
       }
       
       item.innerHTML = `

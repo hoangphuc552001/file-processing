@@ -21,67 +21,24 @@ async function getFileMetadata(s3Key) {
       throw new Error('DynamoDB table name is not configured');
     }
 
-    // Query by S3 key - adjust the key name based on your table structure
-    // Common patterns: 's3Key', 's3_key', 'fileKey', 'key', 's3Path', 'inputS3Key', 'outputS3Key'
-    // Try multiple possible attribute names
-    const possibleKeyAttributes = ['s3Key', 's3_key', 'fileKey', 'key', 's3Path', 'inputS3Key', 'outputS3Key', 'inputKey', 'outputKey'];
-    
-    // Build filter expression for all possible attributes
-    const filterParts = possibleKeyAttributes.map((attr, index) => {
-      const attrName = attr.includes('_') ? `#attr${index}` : attr;
-      return `contains(${attrName}, :key)`;
-    }).join(' OR ');
-    
-    const expressionAttributeNames = {};
-    possibleKeyAttributes.forEach((attr, index) => {
-      if (attr.includes('_') || attr === 'key') {
-        expressionAttributeNames[`#attr${index}`] = attr;
-      }
-    });
-    if (!expressionAttributeNames['#key']) {
-      expressionAttributeNames['#key'] = 'key';
-    }
-
-    const params = {
-      TableName: TABLE_NAME,
-      FilterExpression: filterParts,
-      ExpressionAttributeValues: {
-        ':key': s3Key
-      },
-      ExpressionAttributeNames: expressionAttributeNames
-    };
-
     console.log('🔍 Querying DynamoDB for file metadata:', {
       table: TABLE_NAME,
       s3Key: s3Key
     });
 
-    const result = await dynamodb.scan(params).promise();
-
-    if (result.Items && result.Items.length > 0) {
-      // Return the first matching item (or you might want to return all)
-      console.log('✅ Found file metadata in DynamoDB');
-      return {
-        success: true,
-        metadata: result.Items[0],
-        allItems: result.Items
-      };
-    }
-
-    // If scan doesn't find it, try querying by different attributes
-    // Try querying by exact match if there's a primary key or GSI
-    const queryParams = {
+    // Query by mediaId first (if it's the primary key)
+    const queryByMediaId = {
       TableName: TABLE_NAME,
-      KeyConditionExpression: 's3Key = :key',
+      KeyConditionExpression: 'mediaId = :key',
       ExpressionAttributeValues: {
         ':key': s3Key
       }
     };
 
     try {
-      const queryResult = await dynamodb.query(queryParams).promise();
+      const queryResult = await dynamodb.query(queryByMediaId).promise();
       if (queryResult.Items && queryResult.Items.length > 0) {
-        console.log('✅ Found file metadata in DynamoDB (via query)');
+        console.log('✅ Found file metadata in DynamoDB (by mediaId)');
         return {
           success: true,
           metadata: queryResult.Items[0],
@@ -89,8 +46,28 @@ async function getFileMetadata(s3Key) {
         };
       }
     } catch (queryError) {
-      // Query might fail if the key doesn't exist as a primary key or GSI
-      console.log('Query by key failed, using scan result');
+      // mediaId might not be the primary key, try scan instead
+      console.log('Query by mediaId failed, trying scan...');
+    }
+
+    // Use scan with filter on mediaId or originalKey
+    const scanParams = {
+      TableName: TABLE_NAME,
+      FilterExpression: 'mediaId = :key OR originalKey = :key',
+      ExpressionAttributeValues: {
+        ':key': s3Key
+      }
+    };
+
+    const result = await dynamodb.scan(scanParams).promise();
+
+    if (result.Items && result.Items.length > 0) {
+      console.log('✅ Found file metadata in DynamoDB');
+      return {
+        success: true,
+        metadata: result.Items[0],
+        allItems: result.Items
+      };
     }
 
     console.log('⚠️ No metadata found in DynamoDB for key:', s3Key);
