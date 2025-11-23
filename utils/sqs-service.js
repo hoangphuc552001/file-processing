@@ -1,12 +1,10 @@
 const AWS = require('aws-sdk');
 
 // Configure AWS SQS
+// Uses IAM role credentials automatically on EC2
+// No need to set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
 const sqs = new AWS.SQS({
-  region: process.env.AWS_REGION || 'us-east-1',
-  ...(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-  } : {})
+  region: process.env.AWS_REGION || 'us-east-1'
 });
 
 // SQS Queue URL from environment variable

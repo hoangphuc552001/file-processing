@@ -12,12 +12,10 @@ function generateUniqueId() {
 }
 
 // Configure AWS S3
+// Uses IAM role credentials automatically on EC2
+// No need to set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
 const s3 = new AWS.S3({
-  region: process.env.AWS_REGION || 'us-east-1',
-  ...(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-  } : {})
+  region: process.env.AWS_REGION || 'us-east-1'
 });
 
 // S3 Bucket name from environment variable

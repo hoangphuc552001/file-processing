@@ -42,10 +42,12 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       
-      # AWS Configuration (use IAM roles in production)
+      # AWS Configuration
+      # Uses IAM role credentials automatically on EC2
+      # For local Docker development, configure AWS credentials via ~/.aws/credentials or environment
       AWS_REGION: ${AWS_REGION:-us-east-1}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      # Note: Do NOT set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY here
+      # Use IAM roles on EC2 or configure credentials via AWS CLI/SDK default chain
       
       # Cognito Configuration
       COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID}

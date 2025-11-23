@@ -20,23 +20,14 @@ if (missingVars.length > 0) {
 }
 
 // Configure AWS SDK
-// Note: On EC2, credentials are automatically loaded from IAM Role
-// Only use explicit credentials for local development
+// Uses IAM role credentials automatically on EC2
+// No need to set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
 const awsConfig = {
   region: process.env.AWS_REGION || 'us-east-1'
 };
 
-// Only add credentials if explicitly provided (for local development)
-// On EC2, the SDK will automatically use the IAM role credentials
-if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
-  awsConfig.accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  awsConfig.secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-  console.log('Using explicit AWS credentials from environment variables');
-} else {
-  console.log('Using AWS IAM role credentials (EC2) or default credential chain');
-}
-
 AWS.config.update(awsConfig);
+console.log('Using AWS IAM role credentials (EC2) or default credential chain');
 
 // Cognito configuration with defaults for development
 const cognitoConfig = {
@@ -50,12 +41,9 @@ const cognitoConfig = {
 };
 
 // Initialize Cognito Identity Provider client
+// Uses IAM role credentials automatically on EC2
 const cognitoClient = new CognitoIdentityProviderClient({
-  region: cognitoConfig.Region,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-  }
+  region: cognitoConfig.Region
 });
 
 // Initialize Cognito Identity Service Provider (for older SDK compatibility)
