@@ -5,233 +5,41 @@
   </div>
 </div>
 
-{{#if dbError}}
-  <div class="alert alert-error">
-    <div class="alert-icon">⚠️</div>
-    <div class="alert-content">
-      <strong>Database Error:</strong> {{dbError}}
-    </div>
-  </div>
-{{/if}}
-
-{{#if courses}}
-  {{#if courses.length}}
-    <div class="controls-section">
-      <div class="controls-container">
-        <div class="search-container">
-          <div class="search-input-wrapper">
-            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <input id="search" type="search" placeholder="Search courses, departments, or codes..." aria-label="Search courses" />
-          </div>
-      </div>
-        
-        <div class="controls-group">
-          <button id="add-course-btn" class="add-course-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add Course
-          </button>
-          
-          <div class="select-wrapper">
-            <select id="sort" class="select-input">
-              <option value="name-asc">Sort Name (A-Z)</option>
-              <option value="name-desc">Sort Name (Z-A)</option>
-              <option value="dept-asc">Department (A-Z)</option>
-              <option value="dept-desc">Department (Z-A)</option>
-        </select>
-      </div>
-          
-          <div class="view-toggle">
-            <button id="view-card" class="view-btn active" aria-label="Card view">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
-            </button>
-            <button id="view-list" class="view-btn" aria-label="List view">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="8" y1="6" x2="21" y2="6"></line>
-                <line x1="8" y1="12" x2="21" y2="12"></line>
-                <line x1="8" y1="18" x2="21" y2="18"></line>
-                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="courses-section">
-      <div id="courseGrid" class="courses-grid">
-      {{#each courses}}
-          <article class="course-card"
-                 data-name="{{this.name}}"
-                 data-code="{{this.code}}"
-                 data-dept="{{this.department}}">
-            <div class="card-image">
-            <img src="{{this.image}}"
-                   alt="{{this.name}} course banner"
-                 onerror="this.onerror=null;this.src='/images/course-placeholder.png';" />
-              <div class="card-overlay">
-                <div class="progress-ring">
-                  <svg class="progress-ring-svg" width="60" height="60">
-                    <circle class="progress-ring-circle" cx="30" cy="30" r="25" fill="transparent" stroke="rgba(255,255,255,0.3)" stroke-width="4"/>
-                    <circle class="progress-ring-circle progress-ring-fill" cx="30" cy="30" r="25" fill="transparent" stroke="white" stroke-width="4" stroke-dasharray="157" stroke-dashoffset="47"/>
-                  </svg>
-                  <span class="progress-text">87%</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="card-content">
-              <div class="card-header">
-                <h3 class="course-title">
-                  <a href="/courses/{{this.id}}">{{this.name}}</a>
-                </h3>
-                <div class="course-code">{{this.code}}</div>
-          </div>
-
-              <div class="card-meta">
-                <div class="department">
-                  <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27,6.96 12,12.01 20.73,6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                  </svg>
-                  {{this.department}}
-                </div>
-              </div>
-          </div>
-
-            <div class="card-footer">
-              <div class="course-stats">
-                <div class="stat">
-                  <span class="stat-label">Progress</span>
-                  <span class="stat-value">87%</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-label">Status</span>
-                  <span class="stat-value status-active">Active</span>
-                </div>
-              </div>
-              <div class="card-actions">
-                <button class="card-action danger delete-course-btn" data-course-id="{{this.id}}" data-course-name="{{this.name}}" aria-label="Delete course">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6"/>
-                    <path d="M14 11v6"/>
-                    <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-        </article>
-      {{/each}}
-      </div>
-    </div>
-  {{else}}
-    <div class="empty-state">
-      <div class="empty-icon">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14,2 14,8 20,8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10,9 9,9 8,9"></polyline>
-        </svg>
-      </div>
-      <h3 class="empty-title">No courses found</h3>
-      <p class="empty-description">There are currently no courses available. Please check back later.</p>
-    </div>
-  {{/if}}
-{{/if}}
-
-<!-- Add Course Modal -->
-<div id="add-course-modal" class="modal">
-  <div class="modal-overlay" id="modal-overlay"></div>
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 class="modal-title">Add New Course</h2>
-      <button class="modal-close" id="modal-close" aria-label="Close modal">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
+<div class="file-upload-section">
+  <div class="file-upload-container">
+    <h2 class="file-upload-title">Upload Files to S3</h2>
+    <p class="file-upload-subtitle">Upload your files directly here</p>
     
-    <form id="add-course-form" class="modal-form">
-      <div class="form-group">
-        <label for="course-name" class="form-label">Course Name *</label>
-        <input 
-          type="text" 
-          id="course-name" 
-          name="name" 
-          class="form-input" 
-          placeholder="e.g., Cloud Architecture" 
-          required
-        />
+    <div class="upload-area" id="upload-area">
+      <input type="file" id="file-input" multiple style="display: none;" />
+      <div class="upload-content">
+        <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <p class="upload-text">Drag and drop files here</p>
+        <p class="upload-hint">Maximum file size: 10MB per file</p>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label for="course-code" class="form-label">Course Code *</label>
-        <input 
-          type="text" 
-          id="course-code" 
-          name="code" 
-          class="form-input" 
-          placeholder="e.g., CS301" 
-          required
-        />
+    <div class="upload-progress-container" id="upload-progress-container" style="display: none;">
+      <div class="upload-progress-header">
+        <span>Uploading files...</span>
+        <span class="upload-progress-count" id="upload-progress-count"></span>
       </div>
+      <div class="upload-progress-list" id="upload-progress-list"></div>
+    </div>
 
-      <div class="form-group">
-        <label for="course-department" class="form-label">Department *</label>
-        <input 
-          type="text" 
-          id="course-department" 
-          name="department" 
-          class="form-input" 
-          placeholder="e.g., Computer Science" 
-          required
-        />
+    <div class="upload-results" id="upload-results" style="display: none;">
+      <div class="upload-results-header">
+        <h3>Uploaded Files</h3>
+        <button class="btn btn-secondary" id="clear-results-btn">Clear</button>
       </div>
+      <div class="upload-results-list" id="upload-results-list"></div>
+    </div>
 
-      <div class="form-group">
-        <label for="course-image" class="form-label">Image URL</label>
-        <input 
-          type="url" 
-          id="course-image" 
-          name="image" 
-          class="form-input" 
-          placeholder="https://example.com/image.jpg"
-        />
-      </div>
-
-      <div id="form-message" class="form-message"></div>
-
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="submit-btn">
-          <span class="btn-text">Create Course</span>
-          <span class="btn-loader" style="display: none;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-            </svg>
-          </span>
-        </button>
-      </div>
-    </form>
+    <div class="upload-message" id="upload-message"></div>
   </div>
 </div>
 
@@ -1015,6 +823,301 @@
     to { transform: rotate(360deg); }
   }
 
+  /* File Upload Section */
+  .file-upload-section {
+    max-width: 1200px;
+    margin: 0 auto var(--space-8);
+    padding: 0 var(--space-6);
+  }
+
+  .file-upload-container {
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+  }
+
+  .file-upload-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0 0 var(--space-2);
+  }
+
+  .file-upload-subtitle {
+    font-size: 1rem;
+    color: var(--gray-600);
+    margin: 0 0 var(--space-6);
+  }
+
+  .upload-area {
+    border: 2px dashed var(--gray-300);
+    border-radius: var(--radius-xl);
+    padding: var(--space-12);
+    text-align: center;
+    background: var(--gray-50);
+    transition: var(--transition);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .upload-area:hover {
+    border-color: var(--primary-500);
+    background: var(--primary-50);
+  }
+
+  .upload-area.dragover {
+    border-color: var(--primary-600);
+    background: var(--primary-100);
+    transform: scale(1.02);
+  }
+
+  .upload-content {
+    pointer-events: none;
+  }
+
+  .upload-link {
+    pointer-events: auto;
+  }
+
+  .upload-icon {
+    color: var(--primary-500);
+    margin: 0 auto var(--space-4);
+  }
+
+  .upload-text {
+    font-size: 1rem;
+    color: var(--gray-700);
+    margin: 0 0 var(--space-2);
+  }
+
+  .upload-link {
+    color: var(--primary-600);
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .upload-hint {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    margin: 0;
+  }
+
+  .upload-progress-container {
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+  }
+
+  .upload-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    font-weight: 600;
+    color: var(--gray-700);
+  }
+
+  .upload-progress-count {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+  }
+
+  .upload-progress-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .upload-progress-item {
+    background: white;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+  }
+
+  .upload-progress-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+  }
+
+  .upload-progress-item-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+
+  .upload-progress-item-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius);
+  }
+
+  .upload-progress-item-status.uploading {
+    background: var(--primary-50);
+    color: var(--primary-600);
+  }
+
+  .upload-progress-item-status.success {
+    background: var(--success-50);
+    color: var(--success-600);
+  }
+
+  .upload-progress-item-status.error {
+    background: var(--error-50);
+    color: var(--error-600);
+  }
+
+  .upload-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .upload-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+    transition: width 0.3s ease;
+    border-radius: var(--radius);
+  }
+
+  .upload-results {
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    background: var(--success-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--success-500);
+  }
+
+  .upload-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+  }
+
+  .upload-results-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--success-700);
+    margin: 0;
+  }
+
+  .upload-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .upload-result-item {
+    background: white;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--success-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .upload-result-item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .upload-result-item-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .upload-result-item-url {
+    font-size: 0.75rem;
+    color: var(--primary-600);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+
+  .upload-result-item-url:hover {
+    text-decoration: underline;
+  }
+
+  .upload-result-item-actions {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .upload-result-item-btn {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: var(--transition);
+  }
+
+  .upload-result-item-btn.copy {
+    background: var(--primary-50);
+    color: var(--primary-600);
+  }
+
+  .upload-result-item-btn.copy:hover {
+    background: var(--primary-100);
+  }
+
+  .upload-result-item-btn.delete {
+    background: var(--error-50);
+    color: var(--error-600);
+  }
+
+  .upload-result-item-btn.delete:hover {
+    background: var(--error-100);
+  }
+
+  .upload-message {
+    margin-top: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: none;
+  }
+
+  .upload-message.success {
+    display: block;
+    background: var(--success-50);
+    color: var(--success-600);
+    border: 1px solid var(--success-500);
+  }
+
+  .upload-message.error {
+    display: block;
+    background: var(--error-50);
+    color: var(--error-600);
+    border: 1px solid var(--error-500);
+  }
+
   /* Responsive Design */
   @media (max-width: 768px) {
     .hero-title {
@@ -1252,6 +1355,13 @@
     const form = document.getElementById('add-course-form');
     const formMessage = document.getElementById('form-message');
     const submitBtn = document.getElementById('submit-btn');
+    
+    // Check if submitBtn exists before accessing its children
+    if (!submitBtn) {
+      console.warn('Submit button not found, modal functionality may be limited');
+      return;
+    }
+    
     const btnText = submitBtn.querySelector('.btn-text');
     const btnLoader = submitBtn.querySelector('.btn-loader');
 
@@ -1352,5 +1462,391 @@
         closeModal();
       }
     });
+  })();
+
+  // File Upload Functionality
+  (function() {
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('file-input');
+    const uploadProgressContainer = document.getElementById('upload-progress-container');
+    const uploadProgressList = document.getElementById('upload-progress-list');
+    const uploadProgressCount = document.getElementById('upload-progress-count');
+    const uploadResults = document.getElementById('upload-results');
+    const uploadResultsList = document.getElementById('upload-results-list');
+    const uploadMessage = document.getElementById('upload-message');
+    const clearResultsBtn = document.getElementById('clear-results-btn');
+
+    // Check if required elements exist
+    if (!uploadArea || !fileInput) {
+      console.warn('File upload elements not found');
+      return;
+    }
+
+    let uploadedFiles = [];
+
+    // Show message
+    function showMessage(message, type) {
+      uploadMessage.textContent = message;
+      uploadMessage.className = `upload-message ${type}`;
+      setTimeout(() => {
+        uploadMessage.className = 'upload-message';
+        uploadMessage.textContent = '';
+      }, 5000);
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    // Create progress item
+    function createProgressItem(fileName, fileSize) {
+      const item = document.createElement('div');
+      item.className = 'upload-progress-item';
+      item.dataset.fileName = fileName;
+      item.innerHTML = `
+        <div class="upload-progress-item-header">
+          <span class="upload-progress-item-name">${fileName}</span>
+          <span class="upload-progress-item-status uploading">Uploading...</span>
+        </div>
+        <div class="upload-progress-bar">
+          <div class="upload-progress-bar-fill" style="width: 0%"></div>
+        </div>
+      `;
+      return item;
+    }
+
+    // Update progress
+    function updateProgress(fileName, progress) {
+      if (!uploadProgressList) return;
+      const item = uploadProgressList.querySelector(`[data-file-name="${fileName}"]`);
+      if (item) {
+        const fill = item.querySelector('.upload-progress-bar-fill');
+        if (fill) {
+          fill.style.width = `${progress}%`;
+        }
+      }
+    }
+
+    // Mark progress as complete
+    function markProgressComplete(fileName, success, error) {
+      if (!uploadProgressList) return;
+      const item = uploadProgressList.querySelector(`[data-file-name="${fileName}"]`);
+      if (item) {
+        const status = item.querySelector('.upload-progress-item-status');
+        const fill = item.querySelector('.upload-progress-bar-fill');
+        if (status) {
+          status.className = `upload-progress-item-status ${success ? 'success' : 'error'}`;
+          status.textContent = success ? 'Uploaded' : (error || 'Failed');
+        }
+        if (fill) {
+          fill.style.width = success ? '100%' : '0%';
+          fill.style.background = success ? 'linear-gradient(90deg, var(--success-500), var(--success-600))' : 'var(--error-500)';
+        }
+      }
+    }
+
+    // Create result item
+    function createResultItem(file) {
+      const item = document.createElement('div');
+      item.className = 'upload-result-item';
+      item.dataset.key = file.key;
+      item.innerHTML = `
+        <div class="upload-result-item-info">
+          <div class="upload-result-item-name">${file.originalName}</div>
+          <a href="${file.url}" target="_blank" class="upload-result-item-url">${file.url}</a>
+        </div>
+        <div class="upload-result-item-actions">
+          <button class="upload-result-item-btn copy" data-url="${file.url}">Copy URL</button>
+          <button class="upload-result-item-btn delete" data-key="${file.key}">Delete</button>
+        </div>
+      `;
+      return item;
+    }
+
+    // Upload file using pre-signed URL
+    async function uploadFile(file) {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        showMessage('You must be logged in to upload files', 'error');
+        return null;
+      }
+
+      // Validate file size
+      if (file.size > 10 * 1024 * 1024) {
+        markProgressComplete(file.name, false, 'File size exceeds 10MB limit');
+        return null;
+      }
+
+      try {
+        // Step 1: Request pre-signed URL from backend
+        updateProgress(file.name, 5);
+        
+        // Step 1: Request pre-signed URL from backend
+        const presignedResponse = await fetch('/api/files/presigned-url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            fileName: file.name,
+            mimeType: file.type || 'application/octet-stream',
+            folder: 'uploads'
+          })
+        });
+
+        if (!presignedResponse.ok) {
+          const errorData = await presignedResponse.json();
+          markProgressComplete(file.name, false, errorData.error || 'Failed to get upload URL');
+          return null;
+        }
+
+        const presignedData = await presignedResponse.json();
+        if (!presignedData.success) {
+          markProgressComplete(file.name, false, presignedData.error || 'Failed to get upload URL');
+          return null;
+        }
+
+        updateProgress(file.name, 15);
+
+        // Step 2: Upload file directly to S3 using pre-signed URL
+        // Use XMLHttpRequest for better progress tracking
+        const uploadPromise = new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          
+          // Track upload progress
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = 15 + (e.loaded / e.total) * 80; // 15% to 95%
+              updateProgress(file.name, Math.min(percentComplete, 95));
+            }
+          });
+
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              updateProgress(file.name, 100);
+              resolve(xhr);
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          });
+
+          xhr.addEventListener('error', () => {
+            reject(new Error('Upload failed'));
+          });
+
+          xhr.addEventListener('abort', () => {
+            reject(new Error('Upload aborted'));
+          });
+
+          xhr.open('PUT', presignedData.uploadUrl);
+          xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+          xhr.send(file);
+        });
+
+        await uploadPromise;
+
+        // Step 3: Construct the public URL
+        // The URL format depends on your bucket configuration
+        // For public buckets: https://bucket-name.s3.region.amazonaws.com/key
+        // For CloudFront: https://your-cloudfront-domain.net/key
+        const bucketName = presignedData.bucket;
+        const region = presignedData.region || 'us-east-1';
+        const key = presignedData.key;
+        
+        // Construct S3 URL (adjust based on your bucket's public access settings)
+        // If your bucket is public, this will work. Otherwise, you may need CloudFront URL
+        const fileUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+
+        markProgressComplete(file.name, true);
+
+        return {
+          url: fileUrl,
+          key: key,
+          originalName: file.name,
+          size: file.size,
+          mimeType: file.type || 'application/octet-stream',
+          uploadedAt: new Date().toISOString()
+        };
+
+      } catch (error) {
+        markProgressComplete(file.name, false, error.message || 'Upload failed');
+        return null;
+      }
+    }
+
+    // Upload multiple files
+    async function uploadFiles(files) {
+      if (files.length === 0) return;
+
+      // Show progress container
+      if (uploadProgressContainer) uploadProgressContainer.style.display = 'block';
+      if (uploadProgressList) uploadProgressList.innerHTML = '';
+      if (uploadProgressCount) uploadProgressCount.textContent = `${files.length} file(s)`;
+
+      // Create progress items
+      Array.from(files).forEach(file => {
+        const item = createProgressItem(file.name, file.size);
+        if (uploadProgressList) uploadProgressList.appendChild(item);
+      });
+
+      // Upload files sequentially
+      const results = [];
+      for (const file of files) {
+        const result = await uploadFile(file);
+        if (result) {
+          results.push(result);
+        }
+      }
+
+      // Hide progress after a delay
+      setTimeout(() => {
+        if (uploadProgressContainer) uploadProgressContainer.style.display = 'none';
+      }, 2000);
+
+      // Show results
+      if (results.length > 0) {
+        uploadedFiles = [...uploadedFiles, ...results];
+        displayResults();
+        showMessage(`Successfully uploaded ${results.length} file(s)`, 'success');
+      } else {
+        showMessage('Failed to upload files', 'error');
+      }
+    }
+
+    // Display results
+    function displayResults() {
+      if (!uploadResults || !uploadResultsList) return;
+      uploadResults.style.display = 'block';
+      uploadResultsList.innerHTML = '';
+      uploadedFiles.forEach(file => {
+        const item = createResultItem(file);
+        uploadResultsList.appendChild(item);
+      });
+    }
+
+    // Handle file input change
+    fileInput.addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files.length > 0) {
+        uploadFiles(files);
+        fileInput.value = ''; // Reset input
+      }
+    });
+
+    // Drag and drop handlers
+    uploadArea.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (fileInput) {
+        fileInput.click();
+      }
+    });
+
+    // Also make the "click to browse" link work
+    const uploadLink = uploadArea.querySelector('.upload-link');
+    if (uploadLink) {
+      uploadLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (fileInput) {
+          fileInput.click();
+        }
+      });
+    }
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        uploadFiles(files);
+      }
+    });
+
+    // Copy URL handler
+    uploadResultsList.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('copy')) {
+        const url = e.target.dataset.url;
+        try {
+          await navigator.clipboard.writeText(url);
+          showMessage('URL copied to clipboard!', 'success');
+        } catch (err) {
+          // Fallback for older browsers
+          const textarea = document.createElement('textarea');
+          textarea.value = url;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          showMessage('URL copied to clipboard!', 'success');
+        }
+      }
+    });
+
+    // Delete file handler
+    uploadResultsList.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('delete')) {
+        const key = e.target.dataset.key;
+        const item = e.target.closest('.upload-result-item');
+        
+        if (!confirm('Are you sure you want to delete this file?')) {
+          return;
+        }
+
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          showMessage('You must be logged in to delete files', 'error');
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/files/${encodeURIComponent(key)}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            uploadedFiles = uploadedFiles.filter(f => f.key !== key);
+            if (item) item.remove();
+            if (uploadedFiles.length === 0) {
+              uploadResults.style.display = 'none';
+            }
+            showMessage('File deleted successfully', 'success');
+          } else {
+            showMessage(data.error || 'Failed to delete file', 'error');
+          }
+        } catch (error) {
+          showMessage('An error occurred while deleting the file', 'error');
+        }
+      }
+    });
+
+    // Clear results handler
+    if (clearResultsBtn) {
+      clearResultsBtn.addEventListener('click', () => {
+        uploadedFiles = [];
+        uploadResults.style.display = 'none';
+        uploadResultsList.innerHTML = '';
+      });
+    }
   })();
 </script>

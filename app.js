@@ -11,6 +11,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var authRouter = require('./routes/auth');
 var coursesRouter = require('./routes/courses');
+var filesRouter = require('./routes/files');
 const { initializeOIDCClient, getOIDCClient } = require('./utils/cognito-config');
 
 var app = express();
@@ -53,6 +54,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/api/courses', coursesRouter);
+app.use('/api/files', filesRouter);
 
 // OIDC Callback Route
 app.get('/callback', async (req, res) => {
