@@ -1741,8 +1741,14 @@
             reject(new Error('Upload aborted'));
           });
 
+          // Use PUT method to upload file to S3 using presigned URL
           xhr.open('PUT', presignedData.uploadUrl);
+          
+          // Set Content-Type header - must match what was used to generate the presigned URL
           xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+          
+          // Don't set any other headers - the presigned URL includes all necessary auth
+          // Sending the file as the request body
           xhr.send(file);
         });
 

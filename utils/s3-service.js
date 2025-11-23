@@ -146,9 +146,24 @@ async function getPresignedUploadUrl(fileName, mimeType, expiresIn = 3600, folde
       Bucket: BUCKET_NAME,
       Key: key,
       ContentType: mimeType,
-      Expires: expiresIn,
-      ACL: 'public-read'
+      Expires: expiresIn
     };
+
+    // Only add ACL if explicitly enabled (some buckets have ACLs disabled)
+    // Set ENABLE_S3_ACL=true in env to enable ACL usage
+    // If ACL is disabled on bucket, this will cause the upload to fail
+    if (process.env.ENABLE_S3_ACL === 'true') {
+      params.ACL = 'public-read';
+    }
+
+    // Generate presigned URL for PUT operation (upload)
+    // This URL allows PUT requests to upload files to S3
+    console.log('🔑 Generating presigned PUT URL:', {
+      bucket: BUCKET_NAME,
+      key: key,
+      contentType: mimeType,
+      hasACL: !!params.ACL
+    });
 
     const url = await s3.getSignedUrlPromise('putObject', params);
 

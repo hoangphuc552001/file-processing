@@ -189,6 +189,7 @@ router.post('/presigned-url', authenticateToken, async (req, res) => {
     console.log('✅ Presigned URL generated:', {
       fileName: fileName,
       key: presignedResult.key,
+      method: 'PUT', // This URL is for PUT operations (upload)
       generatedBy: req.user?.username || req.user?.sub || 'unknown'
     });
 
@@ -198,7 +199,9 @@ router.post('/presigned-url', authenticateToken, async (req, res) => {
       key: presignedResult.key,
       bucket: presignedResult.bucket,
       region: presignedResult.region,
-      expiresIn: expiresIn
+      expiresIn: expiresIn,
+      method: 'PUT', // Explicitly indicate this is for PUT operations
+      note: 'This URL is for uploading (PUT) files to S3. Use PUT method with the file as request body.'
     });
 
   } catch (error) {
