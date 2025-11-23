@@ -1095,6 +1095,60 @@
     background: var(--error-100);
   }
 
+  .upload-result-item-btn.metadata-btn {
+    background: var(--primary-50);
+    color: var(--primary-600);
+  }
+
+  .upload-result-item-btn.metadata-btn:hover {
+    background: var(--primary-100);
+  }
+
+  .upload-result-metadata {
+    margin-top: var(--space-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .metadata-badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .metadata-badge.status-completed,
+  .metadata-badge.status-success {
+    background: var(--success-50);
+    color: var(--success-600);
+  }
+
+  .metadata-badge.status-processing,
+  .metadata-badge.status-pending {
+    background: var(--primary-50);
+    color: var(--primary-600);
+  }
+
+  .metadata-badge.status-failed,
+  .metadata-badge.status-error {
+    background: var(--error-50);
+    color: var(--error-600);
+  }
+
+  .metadata-text {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+  }
+
+  .metadata-text.metadata-loading {
+    color: var(--primary-600);
+    font-style: italic;
+  }
+
   .upload-message {
     margin-top: var(--space-4);
     padding: var(--space-3) var(--space-4);
@@ -1555,17 +1609,60 @@
       const item = document.createElement('div');
       item.className = 'upload-result-item';
       item.dataset.key = file.key;
+      
+      // Build metadata display
+      let metadataHtml = '';
+      if (file.metadata) {
+        const metadataItems = [];
+        if (file.metadata.status) metadataItems.push(`<span class="metadata-badge status-${file.metadata.status.toLowerCase()}">${file.metadata.status}</span>`);
+        if (file.metadata.jobId) metadataItems.push(`<span class="metadata-text">Job ID: ${file.metadata.jobId}</span>`);
+        if (file.metadata.processedAt) metadataItems.push(`<span class="metadata-text">Processed: ${new Date(file.metadata.processedAt).toLocaleString()}</span>`);
+        if (file.metadata.duration) metadataItems.push(`<span class="metadata-text">Duration: ${file.metadata.duration}s</span>`);
+        
+        if (metadataItems.length > 0) {
+          metadataHtml = `<div class="upload-result-metadata">${metadataItems.join('')}</div>`;
+        }
+      } else {
+        metadataHtml = '<div class="upload-result-metadata"><span class="metadata-text metadata-loading">Fetching metadata...</span></div>';
+      }
+      
       item.innerHTML = `
         <div class="upload-result-item-info">
           <div class="upload-result-item-name">${file.originalName}</div>
           <a href="${file.url}" target="_blank" class="upload-result-item-url">${file.url}</a>
+          ${metadataHtml}
         </div>
         <div class="upload-result-item-actions">
           <button class="upload-result-item-btn copy" data-url="${file.url}">Copy URL</button>
+          <button class="upload-result-item-btn metadata-btn" data-key="${file.key}">Refresh Metadata</button>
           <button class="upload-result-item-btn delete" data-key="${file.key}">Delete</button>
         </div>
       `;
       return item;
+    }
+    
+    // Fetch metadata for a file
+    async function fetchFileMetadata(key) {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return null;
+
+      try {
+        const response = await fetch(`/api/files/${encodeURIComponent(key)}/metadata?wait=true&maxWaitTime=10000`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.metadata) {
+            return data.metadata;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching metadata:', error);
+      }
+      return null;
     }
 
     // Upload file using pre-signed URL
@@ -1665,13 +1762,35 @@
 
         markProgressComplete(file.name, true);
 
+        // Step 4: Fetch metadata from DynamoDB MediaJobs table
+        let metadata = null;
+        try {
+          const metadataResponse = await fetch(`/api/files/${encodeURIComponent(key)}/metadata?wait=true&maxWaitTime=10000`, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          });
+
+          if (metadataResponse.ok) {
+            const metadataData = await metadataResponse.json();
+            if (metadataData.success && metadataData.metadata) {
+              metadata = metadataData.metadata;
+              console.log('✅ File metadata retrieved:', metadata);
+            }
+          }
+        } catch (metadataError) {
+          console.warn('Could not fetch file metadata:', metadataError);
+          // Don't fail the upload if metadata fetch fails
+        }
+
         return {
           url: fileUrl,
           key: key,
           originalName: file.name,
           size: file.size,
           mimeType: file.type || 'application/octet-stream',
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date().toISOString(),
+          metadata: metadata
         };
 
       } catch (error) {
@@ -1714,6 +1833,17 @@
         uploadedFiles = [...uploadedFiles, ...results];
         displayResults();
         showMessage(`Successfully uploaded ${results.length} file(s)`, 'success');
+        
+        // Try to fetch metadata for files that don't have it yet
+        results.forEach(async (file) => {
+          if (!file.metadata) {
+            const metadata = await fetchFileMetadata(file.key);
+            if (metadata) {
+              file.metadata = metadata;
+              displayResults(); // Re-render to show metadata
+            }
+          }
+        });
       } else {
         showMessage('Failed to upload files', 'error');
       }
@@ -1794,6 +1924,42 @@
           document.execCommand('copy');
           document.body.removeChild(textarea);
           showMessage('URL copied to clipboard!', 'success');
+        }
+      }
+    });
+
+    // Refresh metadata handler
+    uploadResultsList.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('metadata-btn')) {
+        const key = e.target.dataset.key;
+        const item = e.target.closest('.upload-result-item');
+        
+        if (!item) return;
+
+        e.target.disabled = true;
+        e.target.textContent = 'Loading...';
+
+        const metadata = await fetchFileMetadata(key);
+
+        if (metadata) {
+          // Update the file in uploadedFiles array
+          const fileIndex = uploadedFiles.findIndex(f => f.key === key);
+          if (fileIndex !== -1) {
+            uploadedFiles[fileIndex].metadata = metadata;
+          }
+          
+          // Re-render the item
+          const file = uploadedFiles.find(f => f.key === key);
+          if (file) {
+            const newItem = createResultItem(file);
+            item.replaceWith(newItem);
+          }
+          
+          showMessage('Metadata refreshed successfully', 'success');
+        } else {
+          showMessage('Could not fetch metadata. The file may still be processing.', 'error');
+          e.target.disabled = false;
+          e.target.textContent = 'Refresh Metadata';
         }
       }
     });

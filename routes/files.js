@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const { authenticateToken } = require('../middleware/auth');
 const { uploadFile, deleteFile, getPresignedUploadUrl } = require('../utils/s3-service');
+const { getFileMetadata, waitForFileMetadata } = require('../utils/dynamodb-service');
 const router = express.Router();
 
 // Configure multer for memory storage (we'll upload directly to S3)
@@ -205,6 +206,65 @@ router.post('/presigned-url', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to generate presigned URL',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * @route GET /api/files/:key/metadata
+ * @desc Get file metadata from DynamoDB MediaJobs table
+ * @access Private (requires authentication)
+ */
+router.get('/:key/metadata', authenticateToken, async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { wait, maxWaitTime } = req.query;
+
+    if (!key) {
+      return res.status(400).json({
+        success: false,
+        error: 'File key is required'
+      });
+    }
+
+    // Decode the key (in case it's URL encoded)
+    const decodedKey = decodeURIComponent(key);
+
+    let metadataResult;
+
+    // If wait parameter is provided, poll for metadata
+    if (wait === 'true') {
+      const waitTime = maxWaitTime ? parseInt(maxWaitTime, 10) : 30000;
+      metadataResult = await waitForFileMetadata(decodedKey, waitTime);
+    } else {
+      metadataResult = await getFileMetadata(decodedKey);
+    }
+
+    if (!metadataResult.success) {
+      return res.status(404).json({
+        success: false,
+        error: metadataResult.error || 'File metadata not found',
+        key: decodedKey
+      });
+    }
+
+    console.log('✅ File metadata retrieved:', {
+      key: decodedKey,
+      requestedBy: req.user?.username || req.user?.sub || 'unknown'
+    });
+
+    res.json({
+      success: true,
+      metadata: metadataResult.metadata,
+      key: decodedKey
+    });
+
+  } catch (error) {
+    console.error('❌ Error getting file metadata:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get file metadata',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
